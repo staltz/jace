@@ -1,0 +1,13 @@
+woman(mia).
+woman(jody).
+woman(yolanda).
+
+loves(vincent,mia).
+loves(marsellus,mia).
+loves(pumpkin,honeyBunny).
+loves(honeyBunny,pumpkin).
+
+jealous(X,Y) if loves(X,Z) and loves(Y,Z).
+
+evaluate woman(X).
+evaluate jealous(marsellus,W).
