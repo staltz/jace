@@ -13,7 +13,7 @@ validate :: [AST] -> Either ValidationError [AST]
 validate astList =
   astList
   |> checkEach
-  |> checkOverall
+  |> (=<<) checkOverall
 
 -- Checks whether each statement looks ok, in isolation.
 checkEach :: [AST] -> Either ValidationError [AST]
@@ -113,14 +113,16 @@ checkAllRuleHeadVarsInBody ast =
       any (\(Relation _ terms) -> elem variable terms) relations
 
 -- Checks whether the program looks ok cross-statements.
-checkOverall :: Either ValidationError [AST] -> Either ValidationError [AST]
-checkOverall =
-  checkEachRelationArity . checkEachRuleHasNoFacts . checkRelatedRulesHaveSameHead
+checkOverall :: [AST] -> Either ValidationError [AST]
+checkOverall astList =
+  astList
+  |> checkEachRelationArity
+  |> (=<<) checkEachRuleHasNoFacts
+  |> (=<<) checkRelatedRulesHaveSameHead
 
--- Checks whether all statemens of a relation have the same arity.
-checkEachRelationArity :: Either ValidationError [AST] -> Either ValidationError [AST]
-checkEachRelationArity (Left err) = Left err
-checkEachRelationArity (Right astList) =
+-- Checks whether all statements of a relation have the same arity.
+checkEachRelationArity :: [AST] -> Either ValidationError [AST]
+checkEachRelationArity astList =
   let
     errors = detectEachArityError astList
     errorReport = reportErrors errors
@@ -170,9 +172,8 @@ checkEachRelationArity (Right astList) =
       |> foldl (++) ""
 
 -- Checks whether each rule is the only statement for that relation.
-checkEachRuleHasNoFacts :: Either ValidationError [AST] -> Either ValidationError [AST]
-checkEachRuleHasNoFacts (Left err) = Left err
-checkEachRuleHasNoFacts (Right astList) =
+checkEachRuleHasNoFacts :: [AST] -> Either ValidationError [AST]
+checkEachRuleHasNoFacts astList =
   let
     passed =
       astList
@@ -198,9 +199,8 @@ checkEachRuleHasNoFacts (Right astList) =
 
 -- Checks whether all rules of the same relation have the same head,
 -- with the same variable names and order.
-checkRelatedRulesHaveSameHead :: Either ValidationError [AST] -> Either ValidationError [AST]
-checkRelatedRulesHaveSameHead (Left err) = Left err
-checkRelatedRulesHaveSameHead (Right astList) =
+checkRelatedRulesHaveSameHead :: [AST] -> Either ValidationError [AST]
+checkRelatedRulesHaveSameHead astList =
   let
     passed =
       astList
